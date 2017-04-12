@@ -3,6 +3,7 @@ package logrus_stackdriver
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/evalphobia/google-api-go-wrapper/config"
@@ -27,6 +28,8 @@ type StackdriverHook struct {
 	levels         []logrus.Level
 	ignoreFields   map[string]struct{}
 	filters        map[string]func(interface{}) interface{}
+
+	mu sync.Mutex
 }
 
 // New returns initialized logrus hook for Stackdriver.
@@ -57,27 +60,37 @@ func (h *StackdriverHook) Levels() []logrus.Level {
 
 // SetLevels sets logging level to fire this hook.
 func (h *StackdriverHook) SetLevels(levels []logrus.Level) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.levels = levels
 }
 
 // SetLabels sets logging level to fire this hook.
 func (h *StackdriverHook) SetLabels(labels map[string]string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.commonLabels = labels
 }
 
 // Async sets async flag and send log asynchroniously.
 // If use this option, Fire() does not return error.
 func (h *StackdriverHook) Async() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.async = true
 }
 
 // AddIgnore adds field name to ignore.
 func (h *StackdriverHook) AddIgnore(name string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.ignoreFields[name] = struct{}{}
 }
 
 // AddFilter adds a custom filter function.
 func (h *StackdriverHook) AddFilter(name string, fn func(interface{}) interface{}) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.filters[name] = fn
 }
 
